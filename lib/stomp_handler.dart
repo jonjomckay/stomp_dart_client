@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:stomp_dart_client/parser.dart';
 import 'package:stomp_dart_client/sock_js/sock_js_parser.dart';
+import 'package:stomp_dart_client/stomp_channel.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_exception.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 import 'package:stomp_dart_client/stomp_parser.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'src/_connect_api.dart'
     if (dart.library.html) 'src/_connect_html.dart'
@@ -35,7 +35,7 @@ class StompHandler {
   final StompConfig config;
 
   late Parser _parser;
-  WebSocketChannel? _channel;
+  StompChannel? _channel;
   bool _connected = false;
   bool _isActive = false;
   int _currentReceiptIndex = 0;
@@ -59,7 +59,7 @@ class StompHandler {
       if (!_isActive) {
         _cleanUp();
       } else {
-        _channel!.stream.listen(_onData, onError: _onError, onDone: _onDone);
+        _channel!.listen(_onData, onError: _onError, onDone: _onDone);
         _connectToStomp();
       }
     } catch (err) {
@@ -69,7 +69,7 @@ class StompHandler {
       } else {
         if (err is TimeoutException) {
           config.onDebugMessage('Connection timed out...reconnecting');
-        } else if (err is WebSocketChannelException) {
+        } else if (err is StompChannelException) {
           config.onDebugMessage('Connection error...reconnecting');
         } else {
           config.onDebugMessage('Unknown connection error...reconnecting');
@@ -189,7 +189,11 @@ class StompHandler {
     config.onDebugMessage('>>> $serializedFrame');
 
     try {
-      _channel!.sink.add(serializedFrame);
+      if (serializedFrame is String) {
+        _channel!.add(serializedFrame.codeUnits);
+      } else {
+        _channel!.add(serializedFrame);
+      }
     } catch (_) {
       throw StompBadStateException(
         'The StompHandler has no active connection '
@@ -291,9 +295,9 @@ class StompHandler {
       _heartbeatSender = Timer.periodic(Duration(milliseconds: ttl), (_) {
         config.onDebugMessage('>>> PING');
         if (config.useSockJS) {
-          _channel?.sink.add('["\\n"]');
+          _channel?.add('["\\n"]'.codeUnits);
         } else {
-          _channel?.sink.add('\n');
+          _channel?.add('\n'.codeUnits);
         }
       });
     }
@@ -317,6 +321,6 @@ class StompHandler {
     _isActive = false;
     _heartbeatSender?.cancel();
     _heartbeatReceiver?.cancel();
-    _channel?.sink.close();
+    _channel?.close();
   }
 }

@@ -1,19 +1,24 @@
 import 'dart:async';
 import 'dart:html';
 
+import 'package:stomp_dart_client/stomp_channel.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:web_socket_channel/html.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
-Future<WebSocketChannel> connect(StompConfig config) {
-  final completer = Completer<HtmlWebSocketChannel>();
+Future<StompChannel> connect(StompConfig config) {
+  if (config.useTcpSocket) {
+    return Future.error(StompChannelException(
+        'Connecting to a TCP socket is not supported when using HTML'));
+  }
+
+  final completer = Completer<StompChannel>();
   final webSocket = WebSocket(config.connectUrl)
     ..binaryType = BinaryType.list.value;
   webSocket.onOpen.first.then((value) {
-    completer.complete(HtmlWebSocketChannel(webSocket));
+    completer.complete(WebSocketStompChannel(HtmlWebSocketChannel(webSocket)));
   });
   webSocket.onError.first.then((err) {
-    completer.completeError(WebSocketChannelException.from(err));
+    completer.completeError(StompChannelException.from(err));
   });
 
   if (config.connectionTimeout.inMilliseconds > 0) {

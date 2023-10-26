@@ -16,6 +16,9 @@ class StompConfig {
   /// Whether to use SockJS
   final bool useSockJS;
 
+  /// Whether to use a TCP socket instead of a WebSocket
+  final bool useTcpSocket;
+
   /// Time between reconnect attempts
   /// Set to a duration with 0 milliseconds if you don't want to reconnect
   /// automatically
@@ -92,6 +95,7 @@ class StompConfig {
     this.onWebSocketDone = _noOp,
     this.onDebugMessage = _noOp,
     this.useSockJS = false,
+    this.useTcpSocket = false,
   });
 
   StompConfig.sockJS({
@@ -112,6 +116,7 @@ class StompConfig {
     this.onWebSocketError = _noOp,
     this.onWebSocketDone = _noOp,
     this.onDebugMessage = _noOp,
+    this.useTcpSocket = false,
   }) : useSockJS = true;
 
   StompConfig copyWith({
@@ -121,6 +126,7 @@ class StompConfig {
     Duration? heartbeatOutgoing,
     Duration? connectionTimeout,
     bool? useSockJS,
+    bool? useTcpSocket,
     Map<String, String>? stompConnectHeaders,
     Map<String, dynamic>? webSocketConnectHeaders,
     StompBeforeConnectCallback? beforeConnect,
@@ -141,6 +147,7 @@ class StompConfig {
       heartbeatOutgoing: heartbeatOutgoing ?? this.heartbeatOutgoing,
       connectionTimeout: connectionTimeout ?? this.connectionTimeout,
       useSockJS: useSockJS ?? this.useSockJS,
+      useTcpSocket: useTcpSocket ?? this.useTcpSocket,
       webSocketConnectHeaders:
           webSocketConnectHeaders ?? this.webSocketConnectHeaders,
       stompConnectHeaders: stompConnectHeaders ?? this.stompConnectHeaders,
